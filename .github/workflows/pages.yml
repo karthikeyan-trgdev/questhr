@@ -1,25 +1,22 @@
-name: Deploy QuestHR to GitHub Pages
+name: Publish QuestHR to GitHub Pages
 
+# GitHub Pages serves the gh-pages branch. On every push to main this
+# rebuilds that branch from app/ and icons/.
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - name: Assemble site
@@ -28,9 +25,13 @@ jobs:
           cp -r app/. _site/
           cp -r icons _site/icons
           touch _site/.nojekyll
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          printf '* -text\n' > _site/.gitattributes
+      - name: Push to gh-pages
+        run: |
+          cd _site
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publish ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
