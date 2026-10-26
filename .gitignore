@@ -1,0 +1,8 @@
+# Live organisation data: database, backups, audit journal, uploaded files
+data/
+*.db
+*.db-shm
+*.db-wal
+server.log
+*.log
+node_modules/
