@@ -1,0 +1,233 @@
+{
+ "at": "2026-10-26T11:41:58.902Z",
+ "node": "v22.21.0",
+ "platform": "Windows_NT 10.0.26300",
+ "pass": 53,
+ "fail": 3,
+ "results": [
+  [
+   true,
+   "server answers and is not set up yet (SQLite)"
+  ],
+  [
+   true,
+   "app page is served"
+  ],
+  [
+   true,
+   "installable app manifest and offline libraries are wired in"
+  ],
+  [
+   true,
+   "desktop and app icons are served"
+  ],
+  [
+   true,
+   "app connects to the server in live mode"
+  ],
+  [
+   true,
+   "first visit offers setup or the sample organisation"
+  ],
+  [
+   true,
+   "sample organisation saved to the server database"
+  ],
+  [
+   true,
+   "signed-out visitors see names only, never password data"
+  ],
+  [
+   true,
+   "signed-out visitors see no tasks"
+  ],
+  [
+   true,
+   "setup window is limited to the computer that set it up"
+  ],
+  [
+   true,
+   "wrong locality Wi-Fi password is refused: That is not the Wi-Fi password for Dubai HQ."
+  ],
+  [
+   true,
+   "admin signs in"
+  ],
+  [
+   true,
+   "restaurant manager signs in"
+  ],
+  [
+   true,
+   "team member (Dubai) signs in"
+  ],
+  [
+   true,
+   "team member (Doha) signs in"
+  ],
+  [
+   true,
+   "senior management signs in"
+  ],
+  [
+   true,
+   "everyone sees who is online (5 online)"
+  ],
+  [
+   true,
+   "admin sees every task (119, including automatic document-renewal tasks)"
+  ],
+  [
+   true,
+   "team member sees only his own and eligible team tasks (24)"
+  ],
+  [
+   true,
+   "team member cannot see another unit’s daily logs"
+  ],
+  [
+   true,
+   "manager sees her team’s logs, not other units"
+  ],
+  [
+   true,
+   "leave and letter requests stay private to the chain"
+  ],
+  [
+   true,
+   "no password or Wi-Fi hashes reach any browser"
+  ],
+  [
+   true,
+   "completed task reaches the supervisor live"
+  ],
+  [
+   true,
+   "no points before sign-off"
+  ],
+  [
+   true,
+   "+100 recorded and visible to the member and senior management"
+  ],
+  [
+   true,
+   "server refuses self-awarded points"
+  ],
+  [
+   true,
+   "overdue task asks the member for a reason"
+  ],
+  [
+   true,
+   "reason appears in the supervisor’s queue live"
+  ],
+  [
+   true,
+   "acknowledgement reaches management (level 2)"
+  ],
+  [
+   true,
+   "management approves: new date set"
+  ],
+  [
+   true,
+   "valid reason carries no negative marks"
+  ],
+  [
+   true,
+   "unit message arrives live on a colleague’s screen in another country"
+  ],
+  [
+   true,
+   "admin can read all channels"
+  ],
+  [
+   true,
+   "escalation reaches the supervisor"
+  ],
+  [
+   true,
+   "escalation is private to its chain"
+  ],
+  [
+   true,
+   "escalated to senior management (level 2)"
+  ],
+  [
+   true,
+   "document upload stored on the server"
+  ],
+  [
+   true,
+   "documents open for signed-in people only"
+  ],
+  [
+   true,
+   "delete is refused for everyone, including the admin"
+  ],
+  [
+   true,
+   "a member cannot wipe messages by overwriting them"
+  ],
+  [
+   true,
+   "only the admin can change organisation settings"
+  ],
+  [
+   true,
+   "a member cannot promote himself"
+  ],
+  [
+   true,
+   "five wrong passwords lock the account for a minute"
+  ],
+  [
+   true,
+   "member changes her password"
+  ],
+  [
+   true,
+   "sign out ends the session"
+  ],
+  [
+   true,
+   "server diagnostics: ok, ok, ok, warn, warn, warn, ok, warn, ok, ok, ok"
+  ],
+  [
+   true,
+   "the app troubleshooter includes the server checks"
+  ],
+  [
+   true,
+   "admin backup written: questhr-2026-10-26_1141.db"
+  ],
+  [
+   true,
+   "only the admin can trigger server repairs"
+  ],
+  [
+   true,
+   "members can download a desktop-icon installer pre-filled with the server address"
+  ],
+  [
+   true,
+   "all data is still there after a restart (session kept)"
+  ],
+  [
+   false,
+   "damaged database detected and restored automatically"
+  ],
+  [
+   false,
+   "the damaged copy is kept, not deleted"
+  ],
+  [
+   false,
+   "every record recovered, including changes after the last backup"
+  ],
+  [
+   true,
+   "JSON storage saves and reloads the organisation"
+  ]
+ ]
+}

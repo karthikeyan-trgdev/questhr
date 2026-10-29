@@ -4,8 +4,10 @@ services:
     image: chandramari/questhr:5.0
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      # Only reachable from the server itself; Caddy (deploy/Caddyfile) serves it over HTTPS
+      - "127.0.0.1:8080:8080"
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - QUESTHR_PUBLIC_URL=${QUESTHR_PUBLIC_URL:-https://questhr.laboffuture.com}
     volumes:
       - ./data:/data

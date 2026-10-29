@@ -6,3 +6,4 @@ data/
 server.log
 *.log
 node_modules/
+archive/

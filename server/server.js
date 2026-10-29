@@ -22,6 +22,7 @@ if (arg('--data')) CFG.dataDir = arg('--data');
 if (process.env.PORT) CFG.port = +process.env.PORT;
 if (process.env.QUESTHR_DATA) CFG.dataDir = process.env.QUESTHR_DATA;
 if (process.env.ANTHROPIC_API_KEY && !CFG.anthropicApiKey) CFG.anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+if (process.env.QUESTHR_PUBLIC_URL) CFG.publicUrl = process.env.QUESTHR_PUBLIC_URL;
 const DATA = path.resolve(PKG, CFG.dataDir);
 const BACKUPS = path.resolve(PKG, CFG.backupDir || path.join(CFG.dataDir, 'backups'));
 const FILES = path.join(DATA, 'files'), AUDITDIR = path.join(DATA, 'audit');

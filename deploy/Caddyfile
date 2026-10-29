@@ -1,0 +1,9 @@
+# QuestHR behind Caddy: automatic HTTPS (Let's Encrypt) for the VPS.
+# Install: cp deploy/Caddyfile /etc/caddy/Caddyfile && systemctl reload caddy
+questhr.laboffuture.com {
+	reverse_proxy 127.0.0.1:8080
+	# Uploads go up to 60 MB
+	request_body {
+		max_size 64MB
+	}
+}
