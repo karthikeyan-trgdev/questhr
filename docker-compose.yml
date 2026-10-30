@@ -8,6 +8,6 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - QUESTHR_PUBLIC_URL=${QUESTHR_PUBLIC_URL:-https://questhr.laboffuture.com}
+      - QUESTHR_PUBLIC_URL=${QUESTHR_PUBLIC_URL:-https://questhr.chandramarigroup.com}
     volumes:
       - ./data:/data
