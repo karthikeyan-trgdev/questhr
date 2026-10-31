@@ -7,3 +7,7 @@ server.log
 *.log
 node_modules/
 archive/
+backup/
+# Secrets such as QUESTHR_ADMIN_PASSWORD
+.env
+.claude/

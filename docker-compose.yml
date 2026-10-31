@@ -8,6 +8,8 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # First admin's password, only used when the data folder is empty; set it in .env, never in git
+      - QUESTHR_ADMIN_PASSWORD=${QUESTHR_ADMIN_PASSWORD:-}
       - QUESTHR_PUBLIC_URL=${QUESTHR_PUBLIC_URL:-https://questhr.chandramarigroup.com}
     volumes:
       - ./data:/data

@@ -2852,7 +2852,7 @@
     <div class="gatehead">${brandMark(true)}<div><small>QuestHR · ${SYNC.mode === 'shared' ? 'connected workspace' : 'this device'}</small><h1>Sign in</h1><div style="font-size:13px;color:var(--band-muted)">${esc(S.org.name)}</div></div></div>
     <div class="f"><label for="lu">Username</label><input type="text" id="lu" name="username" autocapitalize="none" autocomplete="username" required></div>
     <div class="f"><label for="lp">Password</label><input type="password" id="lp" name="password" autocomplete="current-password" required></div>
-    <div class="f"><label for="lw">Wi-Fi password of your locality</label><input type="password" id="lw" name="wifi" autocomplete="off" required><span class="muted small">Ask your office for it. It is the same code wherever you sign in from.</span></div>
+    <div class="f"><label for="lw">Wi-Fi password of your locality</label><input type="password" id="lw" name="wifi" autocomplete="off"><span class="muted small">Ask your office for it. It is the same code wherever you sign in from. Admins can leave it empty.</span></div>
     <p class="err">${esc(V.loginErr)}</p>
     <button class="btn pri" type="submit">Sign in</button>
     ${isSample ? `<div class="notice"><b>Sample accounts</b> · password <span class="mono">${DEMO_PW}</span> · tap one to fill in all three fields<div class="list" style="margin-top:8px">${demo.map(u => `<button type="button" class="btn sm ghost" style="justify-content:flex-start;text-align:left;white-space:normal" data-act="fill" data-u="${esc(u.username)}">${emb(u, 'sm')}<span><b>${esc(u.username)}</b> · ${esc(u.name)} · ${esc(lvName(u))} · ${esc(deptName(u.dept))} · ${esc(siteName(u.site))}</span></button>`).join('')}</div></div>` : ''}
@@ -4283,7 +4283,7 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
         if (!u || u.pass !== await hash(pw, u.salt)) return bad('Username or password is incorrect.');
         if (!u.active) return bad('This account is suspended. Contact your admin.');
         const site = siteOf(u.site); if (!site) return bad('Your admin has not assigned you a locality yet.');
-        if (site.hash !== await hash(wf, site.salt)) return bad(`That is not the Wi-Fi password for ${site.name}.`);
+        if (!u.admin && site.hash !== await hash(wf, site.salt)) return bad(`That is not the Wi-Fi password for ${site.name}.`);
         V.fails = 0; V.loginErr = ''; ME_ID = u.id; try {sessionStorage.setItem(SKEY, u.id)} catch (_) { } u.lastLogin = now(); V.tab = u.admin ? 'admin' : 'home'; V.scope = 'all'; V.rv = 'all'; announce(); render(); return
       }
       if (f.id === 'pwf' && SYNC.host === 'server') {

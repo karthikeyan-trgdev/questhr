@@ -9,5 +9,10 @@
   "aiModel": "claude-sonnet-5-5",
   "aiModelQuick": "claude-haiku-5-5",
   "sessionHours": 12,
-  "publicUrl": ""
+  "publicUrl": "",
+  "orgName": "TopRock Global",
+  "country": "AE",
+  "adminName": "Administrator",
+  "adminUsername": "admin@toprockglobal.com",
+  "adminPassword": ""
 }
