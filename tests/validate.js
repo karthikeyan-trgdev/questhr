@@ -144,6 +144,21 @@ const J = async r => { try { return await r.json(); } catch (e) { return {}; } }
 
     console.log('7. Nothing can be erased');
     ok((await ADM.F('/api/doc/tasks/t1', { method: 'DELETE' })).status === 405, 'delete is refused for everyone, including the admin');
+    await ADM.F('/api/doc/users/zz1', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: 'zz1', name: 'Mistake Account', username: 'mistake', levelId: 'L3', dept: 'D1', site: 'S1', reportsTo: null, active: true, perm: {}, docs: [], xp: 0, salt: 'aa', pass: 'x' }) });
+    ok((await ARJ.F('/api/doc/users/zz1', { method: 'DELETE' })).status === 403, 'a member cannot delete accounts');
+    ok((await ADM.F('/api/doc/users/u9', { method: 'DELETE' })).status === 409, 'an account with work on record cannot be deleted (suspend instead)');
+    ok((await ADM.F('/api/doc/users/zz1', { method: 'DELETE' })).ok && !(await J(await ADM.F('/api/doc/users/zz1'))).data, 'the admin can delete an unused account');
+    await ADM.submit('addf', {}, { '#an': { value: 'Email Person' }, '#au': { value: 'email.person@toprockglobal.com' }, '#ap': { value: 'Chosen123' }, '#ar': { value: 'L3' }, '#ad': { value: 'D2' }, '#as': { value: 'S1' }, '#az': { value: 'Asia/Dubai' }, '#aa': { value: 'suit' }, '#am': { value: '' } });
+    await wait(500); await ADM.idle();
+    const NEW = client(base); await until(() => NEW.SYNC.loaded, 8000);
+    ok(await NEW.login('email.person@toprockglobal.com', 'Chosen123', 'DXB-Office-24') && NEW.U(NEW.ME).mustChange === false, 'admin sets an email username and password; the person signs in with them');
+    try { NEW.SYNC.db.close(); } catch (e) {}
+    await ADM.submit('sitef', {}, { '#site-n': { value: 'Pop-up office' }, '#site-c': { value: 'Popup-2026' }, '#site-ct': { value: 'AE' } }); await wait(400); await ADM.idle();
+    const pop = ADM.S.org.sites.find(s => s.name === 'Pop-up office');
+    await ADM.click({ act: 'site-del', id: 'S1' }); await ADM.click({ act: 'site-del', id: 'S1' });
+    await ADM.click({ act: 'site-del', id: pop.id }); await ADM.click({ act: 'site-del', id: pop.id }); await wait(400); await ADM.idle();
+    const sites = (await J(await ADM.F('/api/doc/org/main'))).data.sites.map(s => s.id);
+    ok(!sites.includes(pop.id) && sites.includes('S1'), 'admin deletes an empty locality; a locality with members is kept');
     const before = (await J(await ADM.F('/api/col/msgs'))).docs.reduce((n, d) => n + d.data.items.length, 0);
     const mine = (await J(await ARJ.F('/api/col/msgs'))).docs.find(d => d.data.user === 'u9');
     await ARJ.F('/api/doc/msgs/' + mine.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...mine.data, items: [] }) });

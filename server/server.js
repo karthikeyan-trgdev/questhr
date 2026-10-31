@@ -52,6 +52,8 @@ function sqliteStore() {
     load() { for (const r of db.prepare('SELECT path,data FROM docs').iterate()) D.set(r.path, JSON.parse(r.data)); },
     write(p, data, by, prev, ip) { const at = new Date().toISOString(), j = JSON.stringify(data);
       db.exec('BEGIN'); try { put.run(p, p.split('/')[0], j, at, by || ''); aud.run(at, by || '', p, prev === undefined ? null : JSON.stringify(prev), j, ip || ''); db.exec('COMMIT'); } catch (e) { db.exec('ROLLBACK'); throw e; } },
+    remove(p, by, prev, ip) { const at = new Date().toISOString();   // the audit row keeps the removed document
+      db.exec('BEGIN'); try { db.prepare('DELETE FROM docs WHERE path=?').run(p); aud.run(at, by || '', p, prev === undefined ? null : JSON.stringify(prev), null, ip || ''); db.exec('COMMIT'); } catch (e) { db.exec('ROLLBACK'); throw e; } },
     file_put(m) { db.prepare('INSERT OR IGNORE INTO files(id,name,type,size,at,by) VALUES(?,?,?,?,?,?)').run(m.id, m.name, m.type, m.size, m.at, m.by); },
     file_get(id) { return db.prepare('SELECT * FROM files WHERE id=?').get(id); },
     sess_put(t, u, exp) { db.prepare('INSERT OR REPLACE INTO sessions(token,user,exp) VALUES(?,?,?)').run(t, u, exp); },
@@ -72,7 +74,7 @@ function recoverSqlite(file, open) {
   if (b) fs.copyFileSync(b.file, file);
   const db = open();
   db.exec('CREATE TABLE IF NOT EXISTS docs(path TEXT PRIMARY KEY, col TEXT, data TEXT, updated TEXT, by TEXT)');
-  const n = replayAudit(b ? b.at : '', (p, data, at, by) => db.prepare('INSERT INTO docs(path,col,data,updated,by) VALUES(?,?,?,?,?) ON CONFLICT(path) DO UPDATE SET data=excluded.data, updated=excluded.updated').run(p, p.split('/')[0], data, at, by));
+  const n = replayAudit(b ? b.at : '', (p, data, at, by) => data === 'null' ? db.prepare('DELETE FROM docs WHERE path=?').run(p) : db.prepare('INSERT INTO docs(path,col,data,updated,by) VALUES(?,?,?,?,?) ON CONFLICT(path) DO UPDATE SET data=excluded.data, updated=excluded.updated').run(p, p.split('/')[0], data, at, by));
   log(`Restored ${b ? path.basename(b.file) : 'an empty database'} and replayed ${n} later changes from the audit journal.`);
   return db;
 }
@@ -84,8 +86,8 @@ function jsonStore() {
   return {
     kind: 'JSON files', file,
     load() { try { Object.entries(JSON.parse(fs.readFileSync(file, 'utf8'))).forEach(([k, v]) => D.set(k, v)); }
-      catch (e) { if (e.code !== 'ENOENT') { const b = latestBackup('.json'); log('Data file unreadable; restoring from backup and audit journal.'); fs.renameSync(file, file + '.damaged-' + Date.now()); if (b) Object.entries(JSON.parse(fs.readFileSync(b.file, 'utf8'))).forEach(([k, v]) => D.set(k, v)); replayAudit(b ? b.at : '', (p, data) => D.set(p, JSON.parse(data))); } } },
-    write() { if (!timer) timer = setTimeout(flush, 400); },
+      catch (e) { if (e.code !== 'ENOENT') { const b = latestBackup('.json'); log('Data file unreadable; restoring from backup and audit journal.'); fs.renameSync(file, file + '.damaged-' + Date.now()); if (b) Object.entries(JSON.parse(fs.readFileSync(b.file, 'utf8'))).forEach(([k, v]) => D.set(k, v)); replayAudit(b ? b.at : '', (p, data) => data === 'null' ? D.delete(p) : D.set(p, JSON.parse(data))); } } },
+    write() { if (!timer) timer = setTimeout(flush, 400); }, remove() { this.write(); },
     file_put(m) { files[m.id] = m; this.write(); }, file_get(id) { return files[id]; },
     sess_put(t, u, exp) { sess[t] = { token: t, user: u, exp }; this.write(); }, sess_get(t) { return sess[t]; }, sess_end(t) { if (sess[t]) sess[t].exp = 0; this.write(); },
     auditCount() { return null; }, integrity() { try { if (fs.existsSync(file)) JSON.parse(fs.readFileSync(file, 'utf8')); return true; } catch (e) { return false; } },
@@ -281,8 +283,8 @@ async function ai(req, res, s) {
 /* ---------------- request router ---------------- */
 async function handle(req, res) {
   const u = new URL(req.url, 'http://x'), p = decodeURIComponent(u.pathname), m = req.method;
-  if (m === 'DELETE') return J(res, 405, { error: 'Nothing can be deleted in QuestHR.' });
   const s = session(req), me = s ? s.user : null;
+  if (m === 'DELETE') { if (!p.startsWith('/api/doc/users/')) return J(res, 405, { error: 'Nothing can be deleted in QuestHR.' }); return deleteUser(req, res, me, p.slice(9)); }
   if (p === '/api/health') return J(res, 200, { questhr: true, version: VERSION, ai: !!CFG.anthropicApiKey, user: me, configured: !!org().configured, db: store.kind });
   if (p === '/api/login' && m === 'POST') {
     const b = await jbody(req), key = ip(req) + '|' + String(b.username || '').toLowerCase(), f = FAILS.get(key) || { n: 0, until: 0 };
@@ -352,6 +354,21 @@ async function handle(req, res) {
   const map = [['/icons/', ICONS], ['/vendor/', VENDOR], ['/docs/', path.join(PKG, 'docs')]];
   for (const [pre, dir] of map) if (p.startsWith(pre)) { const f = path.join(dir, path.basename(p)); if (fs.existsSync(f)) { res.writeHead(200, { 'content-type': MIME[path.extname(f)] || 'application/octet-stream', 'cache-control': 'public, max-age=86400' }); return fs.createReadStream(f).pipe(res); } }
   return send(res, 404, 'Not found');
+}
+/* an admin may delete an account that has no work on record (e.g. created by mistake); anyone with history is suspended instead */
+function deleteUser(req, res, me, dp) {
+  const id = dp.slice(6), u = userById(id);
+  if (!me || !(userById(me) || {}).admin) return J(res, 403, { error: 'Only an admin can delete accounts.' });
+  if (!/^[\w.\-]+$/.test(id) || !u) return J(res, 404, { error: 'No such account.' });
+  if (id === me) return J(res, 409, { error: 'You cannot delete your own account.' });
+  if (users().some(x => x.reportsTo === id)) return J(res, 409, { error: `${u.name} has people reporting to them. Change their manager first.` });
+  const used = [...D].some(([k, v]) => !k.startsWith('users/') && !k.startsWith('act/') && !k.startsWith('org/') && JSON.stringify(v).includes(`"${id}"`));
+  if (used) return J(res, 409, { error: `${u.name} already has work on record (tasks, logs, requests or messages). Suspend the account instead so that history stays intact.` });
+  D.delete(dp); store.remove(dp, me, u, ip(req)); journal(dp, null, me, ip(req));
+  for (const [t, x] of SESS) if (x.user === id) SESS.delete(t);
+  for (const c of CLIENTS) sse(c, 'doc', { path: dp, data: null });
+  log(`account ${u.username} deleted by ${(userById(me) || {}).username}`);
+  return J(res, 200, { ok: true });
 }
 function commit(p, next, by, req) { const prev = D.get(p); if (prev !== undefined && JSON.stringify(prev) === JSON.stringify(next)) return; D.set(p, next); const who = by || '', from = req ? ip(req) : '';
   store.write(p, next, who, prev, from); journal(p, next, who, from); broadcast(p, next); }

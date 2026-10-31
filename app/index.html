@@ -3408,7 +3408,7 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
       const fl = V.flash; V.flash = null;
       return `<div class="stack">
   ${fl ? `<section class="notice good"><div class="row between"><b>Share these sign-in details privately. They are shown only once.</b><button class="btn sm" data-act="copycreds" data-c="${esc(fl.map(c => `${c.name}\t${c.username}\t${c.pw}\t${c.site}`).join('\n'))}">Copy</button></div>
-   <div class="tw" style="margin-top:8px"><table><thead><tr><th>Name</th><th>Username</th><th>Temporary password</th><th>Locality</th></tr></thead><tbody>${fl.map(c => `<tr><td>${esc(c.name)}</td><td class="mono">${esc(c.username)}</td><td class="mono">${esc(c.pw)}</td><td>${esc(c.site)}</td></tr>`).join('')}</tbody></table></div>
+   <div class="tw" style="margin-top:8px"><table><thead><tr><th>Name</th><th>Username</th><th>Password</th><th>Locality</th></tr></thead><tbody>${fl.map(c => `<tr><td>${esc(c.name)}</td><td class="mono">${esc(c.username)}</td><td class="mono">${esc(c.pw)}</td><td>${esc(c.site)}</td></tr>`).join('')}</tbody></table></div>
    <p class="small" style="margin:8px 0 0">Each person also needs the Wi-Fi password of their locality, and must set their own password at first sign-in.</p></section>`: ''}
   <section class="panel"><h3>Connecting everyone</h3>
    <p style="margin:8px 0">${SYNC.mode === 'shared' ? 'This is a <b>shared workspace</b>. Everyone who opens this page in Claude, on any computer, tablet or phone, in any country, sees the same organisation live and signs in with their own QuestHR username.' : 'This view is in <b>offline mode</b>, so data stays in this browser. Open the published page inside Claude to use the shared workspace.'}</p>
@@ -3431,25 +3431,27 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
   <section class="panel"><h3>Scoring and escalation matrix</h3><p class="muted small" style="margin:4px 0 10px">Each completed and signed-off task scores ${BONUS} points. These limits drive the automatic escalation of delay reasons.</p>
    <div class="fg3"><div class="f"><label for="es-a">Level 1: supervisor acknowledges within (hours)</label><input type="number" id="es-a" min="1" max="240" data-escfg="ackH" value="${escCfg().ackH}"></div><div class="f"><label for="es-d">Level 2: management decides within (hours)</label><input type="number" id="es-d" min="1" max="480" data-escfg="decideH" value="${escCfg().decideH}"></div><div class="f"><label for="es-p">Points removed when a reason is not valid</label><input type="number" id="es-p" min="0" max="100" data-escfg="penalty" value="${escCfg().penalty}"></div></div></section>
   <section class="panel"><h3>Localities, countries and Wi-Fi access</h3><p class="muted small" style="margin:4px 0 10px">Members sign in with their own password plus the Wi-Fi password of their locality. Change a code here when the office Wi-Fi password changes.</p>
-   <div class="tw"><table><thead><tr><th>Locality</th><th>Country</th><th class="r">Members</th><th>Code changed</th><th>New Wi-Fi password</th></tr></thead><tbody>
-   ${S.org.sites.map(s => `<tr><td><input type="text" aria-label="Locality name" data-site="${s.id}" data-k="name" value="${esc(s.name)}"></td><td><select aria-label="Country" data-site="${s.id}" data-k="country">${Object.entries(COUNTRIES).map(([k, c]) => `<option value="${k}" ${s.country === k ? 'selected' : ''}>${c.n}</option>`).join('')}</select></td><td class="r mono">${S.users.filter(u => u.site === s.id).length}</td><td class="mono">${fmtD(s.changed)}</td><td><div class="row" style="flex-wrap:nowrap"><input type="text" id="sc-${s.id}" placeholder="At least 6 characters" aria-label="New code for ${esc(s.name)}" style="min-width:140px"><button class="btn sm" data-act="site-code" data-id="${s.id}">Update</button></div></td></tr>`).join('')}</tbody></table></div>
+   <div class="tw"><table><thead><tr><th>Locality</th><th>Country</th><th class="r">Members</th><th>Code changed</th><th>New Wi-Fi password</th><th></th></tr></thead><tbody>
+   ${S.org.sites.map(s => `<tr><td><input type="text" aria-label="Locality name" data-site="${s.id}" data-k="name" value="${esc(s.name)}"></td><td><select aria-label="Country" data-site="${s.id}" data-k="country">${Object.entries(COUNTRIES).map(([k, c]) => `<option value="${k}" ${s.country === k ? 'selected' : ''}>${c.n}</option>`).join('')}</select></td><td class="r mono">${S.users.filter(u => u.site === s.id).length}</td><td class="mono">${fmtD(s.changed)}</td><td><div class="row" style="flex-wrap:nowrap"><input type="text" id="sc-${s.id}" placeholder="At least 6 characters" aria-label="New code for ${esc(s.name)}" style="min-width:140px"><button class="btn sm" data-act="site-code" data-id="${s.id}">Update</button></div></td>
+    <td>${(() => {const n = S.users.filter(u => u.site === s.id).length, why = n ? `Move its ${n} member${n > 1 ? 's' : ''} to another locality first` : S.org.sites.length < 2 ? 'The organisation needs at least one locality' : 'Delete this locality'; return `<button class="btn sm danger" data-act="site-del" data-id="${s.id}" title="${why}" ${n || S.org.sites.length < 2 ? 'disabled' : ''}>${V.siteDelArm === s.id ? 'Confirm delete' : 'Delete'}</button>`})()}</td></tr>`).join('')}</tbody></table></div>
    <form id="sitef" class="row" style="margin-top:10px"><input type="text" id="site-n" placeholder="New locality, e.g. Doha branch" required style="flex:1;min-width:160px"><select id="site-ct" aria-label="Country">${Object.entries(COUNTRIES).map(([k, c]) => `<option value="${k}">${c.n}</option>`).join('')}</select><input type="text" id="site-c" placeholder="Its Wi-Fi password" required style="min-width:150px"><button class="btn sm">Add locality</button></form></section>
   <section class="panel"><h3 style="margin-bottom:10px">Add a member</h3>
    <form id="addf" class="stack" autocomplete="off"><div class="fg3">
     <div class="f"><label for="an">Full name</label><input type="text" id="an" required placeholder="e.g. Sara Khalid"></div>
-    <div class="f"><label for="au">Username (unique)</label><input type="text" id="au" required autocapitalize="none" placeholder="sara.k"></div>
+    <div class="f"><label for="au">Username (unique)</label><input type="text" id="au" required autocapitalize="none" placeholder="sara.k or sara@company.com"></div>
+    <div class="f"><label for="ap">Password</label><input type="password" id="ap" required autocomplete="new-password" placeholder="8+ characters, a letter and a number"></div>
     <div class="f"><label for="ar">Level</label><select id="ar">${S.org.levels.map(l => `<option value="${l.id}">${esc(l.name)} · ${esc(l.char)}</option>`).join('')}<option value="admin">Admin · Architect</option></select></div>
     <div class="f"><label for="ad">Business unit</label><select id="ad">${S.org.depts.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('')}</select></div>
     <div class="f"><label for="am">Reports to</label><select id="am"><option value="">None (top of a line)</option>${mgrs.map(m => `<option value="${m.id}">${esc(m.name)} · ${esc(lvName(m))}</option>`).join('')}</select></div>
     <div class="f"><label for="as">Locality</label><select id="as">${S.org.sites.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>
     <div class="f"><label for="az">Time zone</label><select id="az">${TZS.map(z => `<option ${z === LOCAL_TZ ? 'selected' : ''}>${z}</option>`).join('')}</select></div>
     <div class="f"><label for="aa">Dress code</label><select id="aa">${Object.entries(ATTIRE).map(([k, a]) => `<option value="${k}">${a.l}</option>`).join('')}</select></div></div>
-    <p class="err" id="add-err"></p><div class="row"><button class="btn pri" type="submit">Create account</button><span class="muted small">A temporary password is generated and shown once. Upload their photo with Character below.</span></div></form>
+    <p class="err" id="add-err"></p><div class="row"><label class="row small" style="gap:6px"><input type="checkbox" id="amc"> Ask them to change this password at first sign-in</label><div class="row"><button class="btn pri" type="submit">Create account</button><span class="muted small">The sign-in details are shown once after you create the account. Upload their photo with Character below.</span></div></form>
    <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:600">Bulk add (no limit)</summary>
     <p class="muted small">One person per line: <span class="mono">Full name, level, unit, locality, manager username</span>. Names must match the setup above.</p>
     <textarea id="bulk" rows="4" placeholder="Sara Khalid, Team member, TopRock Interiors, Dubai HQ, daniel.o"></textarea>
     <p class="err" id="bulk-err"></p><div class="row" style="margin-top:8px"><button class="btn" data-act="bulk">Create accounts</button></div></details></section>
-  <section class="panel"><div class="row between" style="margin-bottom:10px"><h3>Accounts and access</h3><span class="mono muted">${S.users.length} accounts · no cap · suspended, never deleted</span></div>
+  <section class="panel"><div class="row between" style="margin-bottom:10px"><h3>Accounts and access</h3><span class="mono muted">${S.users.length} accounts · no cap · unused accounts can be deleted; people with history are suspended</span></div>
    <div class="tw"><table><thead><tr><th>Member</th><th>Username</th><th>Level</th><th>Unit</th><th>Locality</th><th>Reports to</th><th>Time zone</th><th class="c">Upload</th><th class="c">Create</th><th class="c">Active</th><th></th></tr></thead><tbody>
    ${S.users.map(u => `<tr><td><div class="row" style="flex-wrap:nowrap">${emb(u, 'sm')}<span style="white-space:nowrap">${esc(u.name)}</span></div></td><td class="mono">${esc(u.username)}${u.mustChange ? ' <span class="chip pending">Temp</span>' : ''}</td>
     <td><select data-u="${u.id}" data-f="level" aria-label="Level">${S.org.levels.map(l => `<option value="${l.id}" ${u.levelId === l.id && !u.admin ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}<option value="admin" ${u.admin ? 'selected' : ''}>Admin</option></select></td>
@@ -3459,7 +3461,7 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
     <td><select data-u="${u.id}" data-f="tz" aria-label="Time zone">${[...new Set([u.tz, ...TZS])].map(z => `<option ${z === u.tz ? 'selected' : ''}>${z}</option>`).join('')}</select></td>
     ${['upload', 'create'].map(p => `<td class="c"><input type="checkbox" data-u="${u.id}" data-f="${p}" ${u.perm[p] ? 'checked' : ''} aria-label="${p}"></td>`).join('')}
     <td class="c"><input type="checkbox" data-u="${u.id}" data-f="active" ${u.active ? 'checked' : ''} ${u.id === ME_ID ? 'disabled' : ''} aria-label="Active"></td>
-    <td><div class="row" style="flex-wrap:nowrap;gap:6px"><button class="btn sm" data-act="studio" data-id="${u.id}">Character</button><button class="btn sm" data-act="mydocs" data-id="${u.id}">Documents</button><button class="btn sm" data-act="resetpw" data-id="${u.id}" ${u.id === ME_ID ? 'disabled' : ''}>Reset password</button></div></td></tr>`).join('')}</tbody></table></div></section>
+    <td><div class="row" style="flex-wrap:nowrap;gap:6px"><button class="btn sm" data-act="studio" data-id="${u.id}">Character</button><button class="btn sm" data-act="mydocs" data-id="${u.id}">Documents</button><button class="btn sm" data-act="resetpw" data-id="${u.id}" ${u.id === ME_ID ? 'disabled' : ''}>Reset password</button><button class="btn sm danger" data-act="deluser" data-id="${u.id}" ${u.id === ME_ID ? 'disabled' : ''} title="Delete an account that has no work on record">${V.delArm === u.id ? 'Confirm delete' : 'Delete'}</button></div></td></tr>`).join('')}</tbody></table></div></section>
   <p class="notice" style="margin:0">Nothing in QuestHR can be erased, by any user or by the admin. Entries, tasks, comments, sign-offs, requests and documents are permanent; edits keep the earlier version; accounts are suspended instead of deleted.</p></div>`}
 
     /* ======================= feature guide & blueprint ======================= */
@@ -4144,7 +4146,19 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
         case 'copycreds': copy(el.dataset.c, 'Sign-in details copied'); break;
         case 'rp-reset': V.rp = {preset: 'month', from: '', to: '', member: 'all', dept: 'all', task: 'all', status: 'all', review: 'all', tFrom: '', tTo: '', group: 'auto'}; render(); break;
         case 'lv-up': {const a = S.org.levels, i = a.findIndex(l => l.id === el.dataset.id);[a[i - 1], a[i]] = [a[i], a[i - 1]]; const n = fixLines(); log('reordered hierarchy levels'); render(); toast(n ? `Levels reordered. ${n} reporting line${n > 1 ? 's were' : ' was'} cleared because the manager is no longer above.` : 'Levels reordered'); break}
+        case 'site-del': {const s = siteOf(el.dataset.id); if (!ME().admin || !s) break;
+          const n = S.users.filter(u => u.site === s.id).length; if (n) {toast(`Move the ${n} member${n > 1 ? 's' : ''} of ${s.name} to another locality first.`); break}
+          if (S.org.sites.length < 2) {toast('The organisation needs at least one locality.'); break}
+          if (V.siteDelArm !== s.id) {V.siteDelArm = s.id; render(); break} V.siteDelArm = null;   // first click arms, second click deletes
+          S.org.sites = S.org.sites.filter(x => x.id !== s.id); log(`deleted the locality ${s.name}`); render(); toast(`${s.name} was deleted.`); break}
         case 'site-code': {const s = siteOf(el.dataset.id), inp = document.getElementById('sc-' + s.id), code = inp.value.trim(); if (code.length < 6) {toast('Use at least 6 characters'); break} s.salt = salt(); s.hash = await hash(code, s.salt); s.changed = today(); delete s.demo; log(`changed the Wi-Fi access code for ${s.name}`); render(); toast(`New code is active for ${s.name}`); break}
+        case 'deluser': {const id = el.dataset.id, u = U(id); if (!ME().admin || id === ME_ID) break;
+          if (V.delArm !== id) {V.delArm = id; render(); break} V.delArm = null;   // first click arms, second click deletes
+          if (SYNC.host === 'server') {const r = await api('DELETE', '/api/doc/users/' + id).catch(e => ({error: e.message})); if (r.error) {render(); toast(r.error); break}
+            S.users = S.users.filter(x => x.id !== id); onRemote([['users/' + id, null]])}
+          else if (SYNC.mode !== 'shared') {S.users = S.users.filter(x => x.id !== id); save()}
+          else {render(); toast('Deleting accounts needs the QuestHR server.'); break}
+          log(`deleted the account of ${u.name}`); render(); toast(`${u.name}’s account was deleted.`); break}
         case 'resetpw': {const u = U(el.dataset.id), pw = tempPw(); u.salt = salt(); u.pass = await hash(pw, u.salt); u.mustChange = true; V.flash = [{name: u.name, username: u.username, pw, site: siteName(u.site)}]; log(`reset the password for ${u.name}`); render(); window.scrollTo(0, 0); break}
         case 'bulk': await bulkAdd(); break;
       }
@@ -4152,9 +4166,9 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
     function copy(txt, msg) {if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast(msg), () => showCopy(txt)); else showCopy(txt)}
     function showCopy(txt) {openModal(`<div class="row between"><h3>Copy this text</h3><button class="btn ghost" data-act="close">Close</button></div><textarea id="cpy" rows="12" readonly>${esc(txt)}</textarea>`); const a = $('#cpy'); a.focus(); a.select()}
     function uniqueUser(base) {let u = base.toLowerCase().replace(/[^a-z0-9._-]/g, '') || 'user', n = 1, c = u; while (S.users.some(x => x.username === c)) c = u + (++n); return c}
-    async function createUser({name, username, level, dept, site, reportsTo, tz, attire}) {
-      const pw = tempPw(), s = salt();
-      const u = {id: rid('u'), name, username, levelId: level === 'admin' ? null : level, admin: level === 'admin', dept, site, reportsTo: level === 'admin' ? null : (reportsTo || null), tz: tz || LOCAL_TZ, xp: 0, attire: attire || 'suit', skin: null, hair: null, photo: null, docs: [], salt: s, pass: await hash(pw, s), mustChange: true, active: true, perm: {upload: true, create: true}, created: now()};
+    async function createUser({name, username, level, dept, site, reportsTo, tz, attire, password, mustChange}) {
+      const pw = password || tempPw(), s = salt(); mustChange = password ? !!mustChange : true;   // a generated password is always temporary
+      const u = {id: rid('u'), name, username, levelId: level === 'admin' ? null : level, admin: level === 'admin', dept, site, reportsTo: level === 'admin' ? null : (reportsTo || null), tz: tz || LOCAL_TZ, xp: 0, attire: attire || 'suit', skin: null, hair: null, photo: null, docs: [], salt: s, pass: await hash(pw, s), mustChange, active: true, perm: {upload: true, create: true}, created: now()};
       S.users.push(u); return {name, username, pw, site: siteName(site)}
     }
     async function bulkAdd() {
@@ -4307,13 +4321,14 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
       }
       if (f.id === 'docf') {const u = U(f.dataset.u); (u.docs = u.docs || []).push({id: rid('d'), type: $('#dc-t').value, no: $('#dc-n').value.trim(), expiry: $('#dc-e').value}); log(`added a ${$('#dc-t').value} record for ${u.id === ME_ID ? 'themself' : u.name}`); render(); docsModal(u.id); return }
       if (f.id === 'addf') {
-        const er = $('#add-err'), name = $('#an').value.trim(), username = $('#au').value.trim().toLowerCase();
-        if (!/^[a-z0-9._-]{3,32}$/.test(username)) {er.textContent = 'Username must be 3–32 characters: letters, numbers, dot, dash or underscore.'; return }
+        const er = $('#add-err'), name = $('#an').value.trim(), username = $('#au').value.trim().toLowerCase(), password = $('#ap').value;
+        if (!/^[a-z0-9._@-]{3,64}$/.test(username)) {er.textContent = 'Username must be 3–64 characters: letters, numbers, dot, dash, underscore or @ (an email address works).'; return }
         if (S.users.some(u => u.username === username)) {er.textContent = 'This username is taken. Choose another.'; return }
+        if (!pwOK(password)) {er.textContent = 'Password needs at least 8 characters with a letter and a number.'; return }
         const level = $('#ar').value, mgr = $('#am').value ? U($('#am').value) : null;
         const myRank = level === 'admin' ? 0 : S.org.levels.length - S.org.levels.findIndex(l => l.id === level);
         if (mgr && level !== 'admin' && rank(mgr) <= myRank) {er.textContent = `${mgr.name} is not above the chosen level. Pick a manager from a higher level.`; return }
-        const c = await createUser({name, username, level, dept: $('#ad').value, site: $('#as').value, reportsTo: mgr?.id, tz: $('#az').value, attire: $('#aa').value}); log(`created an account for ${name}`); V.flash = [c]; render(); window.scrollTo(0, 0); return
+        const c = await createUser({name, username, level, dept: $('#ad').value, site: $('#as').value, reportsTo: mgr?.id, tz: $('#az').value, attire: $('#aa').value, password, mustChange: $('#amc').checked}); log(`created an account for ${name}`); V.flash = [c]; render(); window.scrollTo(0, 0); return
       }
       if (f.id === 'lvf') {
         const name = $('#lv-new').value.trim(); if (!name) return; if (S.org.levels.some(l => l.name.toLowerCase() === name.toLowerCase())) {toast('A level with that name exists'); return }
