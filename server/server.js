@@ -296,9 +296,7 @@ async function handle(req, res) {
     const usr = users().find(x => x.username === String(b.username || '').trim().toLowerCase());
     if (!usr || !usr.salt || usr.pass !== sha(String(b.password || ''), usr.salt)) return fail('Username or password is incorrect.');
     if (usr.active === false) return fail('This account is suspended. Contact your admin.');
-    const site = (org().sites || []).find(x => x.id === usr.site);
-    if (!site) return fail('Your admin has not assigned you a locality yet.');
-    if (!usr.admin && site.hash !== sha(String(b.wifi || ''), site.salt)) return fail(`That is not the Wi-Fi password for ${site.name}.`);   // admins manage remotely, so only staff need the locality code
+    if (!(org().sites || []).some(x => x.id === usr.site)) return fail('Your admin has not assigned you a locality yet.');
     FAILS.delete(key); const t = crypto.randomBytes(32).toString('hex'), exp = Date.now() + CFG.sessionHours * 36e5; SESS.set(t, { token: t, user: usr.id, exp }); store.sess_put(t, usr.id, exp);
     setCookie(res, req, 'qh_sid', t, CFG.sessionHours * 3600); log(`sign-in ${usr.username} from ${ip(req)}`); return J(res, 200, { id: usr.id, mustChange: !!usr.mustChange });
   }
@@ -376,15 +374,15 @@ function deleteUser(req, res, me, dp) {
 /* a fresh server with adminUsername/adminPassword in config.json creates its organisation and first admin itself, so no setup screen (or sample data) is ever shown */
 function bootstrap() {
   if (org().configured || !CFG.adminUsername || !CFG.adminPassword) return;
-  const at = new Date().toISOString(), salt = () => crypto.randomBytes(8).toString('hex'), wifi = crypto.randomBytes(6).toString('base64url'), ws = salt(), as = salt();
+  const at = new Date().toISOString(), as = crypto.randomBytes(8).toString('hex');
   let tz = 'UTC'; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
   commit('org/main', { name: CFG.orgName || 'QuestHR', configured: true, peer: 'none', logo: null,
     levels: [{ id: 'L1', name: 'Leadership', char: 'Commander' }, { id: 'L2', name: 'Management', char: 'Captain' }, { id: 'L3', name: 'Team member', char: 'Ranger' }],
     depts: [{ id: 'D1', name: 'General', industry: 'corporate' }],
-    sites: [{ id: 'S1', name: 'Head office', country: CFG.country, salt: ws, hash: sha(wifi, ws), changed: at.slice(0, 10) }] }, 'setup');
+    sites: [{ id: 'S1', name: 'Head office', country: CFG.country, changed: at.slice(0, 10) }] }, 'setup');
   commit('users/u1', { id: 'u1', name: CFG.adminName, username: String(CFG.adminUsername).trim().toLowerCase(), levelId: null, admin: true, dept: 'D1', site: 'S1', reportsTo: null, tz, xp: 0, attire: 'suit', photo: null, docs: [],
     salt: as, pass: sha(String(CFG.adminPassword), as), mustChange: false, active: true, perm: { upload: true, create: true }, created: at }, 'setup');
-  console.log(`\n  New organisation created. Admin sign-in: ${CFG.adminUsername}\n  Staff Wi-Fi password for "Head office": ${wifi}  (change it in Admin > Localities)`);
+  console.log(`\n  New organisation created. Admin sign-in: ${CFG.adminUsername}`);
 }
 function commit(p, next, by, req) { const prev = D.get(p); if (prev !== undefined && JSON.stringify(prev) === JSON.stringify(next)) return; D.set(p, next); const who = by || '', from = req ? ip(req) : '';
   store.write(p, next, who, prev, from); journal(p, next, who, from); broadcast(p, next); }

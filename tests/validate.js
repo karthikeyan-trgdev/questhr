@@ -56,7 +56,7 @@ function client(base) {
   const A = ctx.__qh; A.F = F; A.els = els;
   A.click = async (ds, extra = {}) => { const e = { dataset: ds, disabled: false, textContent: '', closest() { return e; }, querySelector: () => ({ value: extra.note || '' }), ...extra }; await H.click({ target: { id: '', closest: () => e } }); };
   A.submit = async (id, ds, fields) => { Object.entries(fields || {}).forEach(([k, v]) => { els[k] = Object.assign(el(), v); }); const f = { id, dataset: ds || {}, querySelector: s => s === 'button' ? { disabled: false, textContent: '' } : (fields && fields[s]) || null }; await H.submit({ preventDefault() {}, target: f }); };
-  A.login = async (u, pw, wifi) => { await A.submit('loginf', {}, { '#lu': { value: u }, '#lp': { value: pw }, '#lw': { value: wifi } }); return until(() => A.ME && A.SYNC.loaded && A.SYNC.status === 'live', 8000); };
+  A.login = async (u, pw) => { await A.submit('loginf', {}, { '#lu': { value: u }, '#lp': { value: pw } }); return until(() => A.ME && A.SYNC.loaded && A.SYNC.status === 'live', 8000); };
   A.idle = () => until(() => !A.SYNC.writing && A.SYNC.status !== 'saving', 10000);
   return A;
 }
@@ -87,8 +87,8 @@ const J = async r => { try { return await r.json(); } catch (e) { return {}; } }
     const pw = 'Demo@2026';
     const ADM = client(base), FAT = client(base), ARJ = client(base), LIN = client(base), OMA = client(base);
     await Promise.all([ADM, FAT, ARJ, LIN, OMA].map(c => until(() => c.SYNC.loaded, 8000)));
-    const bad = client(base); await until(() => bad.SYNC.loaded); await bad.submit('loginf', {}, { '#lu': { value: 'arjun.m' }, '#lp': { value: pw }, '#lw': { value: 'wrong-wifi' } });
-    ok(!bad.ME && /Wi-Fi/.test(bad.V.loginErr), 'wrong locality Wi-Fi password is refused: ' + bad.V.loginErr);
+    const bad = client(base); await until(() => bad.SYNC.loaded); await bad.submit('loginf', {}, { '#lu': { value: 'arjun.m' }, '#lp': { value: 'wrong-pass1' } });
+    ok(!bad.ME && /incorrect/.test(bad.V.loginErr), 'wrong password is refused: ' + bad.V.loginErr);
     ok(await ADM.login('rania.admin', pw, site('u0')), 'admin signs in');
     ok(await FAT.login('fatima.k', pw, site('u8')), 'restaurant manager signs in');
     ok(await ARJ.login('arjun.m', pw, site('u9')), 'team member (Dubai) signs in');
@@ -101,7 +101,7 @@ const J = async r => { try { return await r.json(); } catch (e) { return {}; } }
     ok(!ARJ.S.logs.some(l => l.user === 'u4'), 'team member cannot see another unit’s daily logs');
     ok(FAT.S.logs.some(l => l.user === 'u9') && !FAT.S.logs.some(l => l.user === 'u6'), 'manager sees her team’s logs, not other units');
     ok(!ARJ.S.requests.some(r => r.by === 'u5'), 'leave and letter requests stay private to the chain');
-    ok(ARJ.S.users.every(u => !u.pass && !u.salt) && ARJ.S.org.sites.every(s => !s.hash), 'no password or Wi-Fi hashes reach any browser');
+    ok(ARJ.S.users.every(u => !u.pass && !u.salt) && ARJ.S.org.sites.every(s => !s.hash), 'no password hashes reach any browser');
 
     console.log('3. Scoring: 100 points only after completion and sign-off');
     const t14 = ARJ.taskById('t14'), s0 = FAT.scoreOf('u9'); ARJ.completeTask(t14); await ARJ.idle();
@@ -171,8 +171,8 @@ const J = async r => { try { return await r.json(); } catch (e) { return {}; } }
     const me9b = (await J(await ADM.F('/api/doc/users/u9'))).data; ok(!me9b.admin && me9b.levelId === me9.levelId, 'a member cannot promote himself');
 
     console.log('8. Sign-in security');
-    for (let i = 0; i < 5; i++) await fetch(base + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: 'lina.k', password: 'nope', wifi: 'x' }) });
-    const lk = await fetch(base + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: 'lina.k', password: pw, wifi: site('u10') }) });
+    for (let i = 0; i < 5; i++) await fetch(base + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: 'lina.k', password: 'nope' }) });
+    const lk = await fetch(base + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: 'lina.k', password: pw }) });
     ok(lk.status === 429, 'five wrong passwords lock the account for a minute');
     const pc = await LIN.F('/api/password', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ old: pw, new: 'NewPass2026' }) }); ok(pc.ok, 'member changes her password');
     const lo = await LIN.F('/api/logout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }); ok(lo.ok && (await J(await LIN.F('/api/health'))).user === null, 'sign out ends the session');
