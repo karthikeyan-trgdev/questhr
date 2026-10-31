@@ -3429,11 +3429,6 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
      <form id="dpf" class="row"><input type="text" id="dp-new" placeholder="New unit" required style="flex:1"><select id="dp-ind" aria-label="Industry">${Object.entries(INDUSTRY).map(([k, v]) => `<option value="${k}">${v.l}</option>`).join('')}</select><button class="btn sm">Add</button></form></div></div></section>
   <section class="panel"><h3>Scoring and escalation matrix</h3><p class="muted small" style="margin:4px 0 10px">Each completed and signed-off task scores ${BONUS} points. These limits drive the automatic escalation of delay reasons.</p>
    <div class="fg3"><div class="f"><label for="es-a">Level 1: supervisor acknowledges within (hours)</label><input type="number" id="es-a" min="1" max="240" data-escfg="ackH" value="${escCfg().ackH}"></div><div class="f"><label for="es-d">Level 2: management decides within (hours)</label><input type="number" id="es-d" min="1" max="480" data-escfg="decideH" value="${escCfg().decideH}"></div><div class="f"><label for="es-p">Points removed when a reason is not valid</label><input type="number" id="es-p" min="0" max="100" data-escfg="penalty" value="${escCfg().penalty}"></div></div></section>
-  <section class="panel"><h3>Localities and countries</h3><p class="muted small" style="margin:4px 0 10px">Each member belongs to one locality. The country sets the weekend and the ID document name.</p>
-   <div class="tw"><table><thead><tr><th>Locality</th><th>Country</th><th class="r">Members</th><th></th></tr></thead><tbody>
-   ${S.org.sites.map(s => `<tr><td><input type="text" aria-label="Locality name" data-site="${s.id}" data-k="name" value="${esc(s.name)}"></td><td><select aria-label="Country" data-site="${s.id}" data-k="country">${Object.entries(COUNTRIES).map(([k, c]) => `<option value="${k}" ${s.country === k ? 'selected' : ''}>${c.n}</option>`).join('')}</select></td><td class="r mono">${S.users.filter(u => u.site === s.id).length}</td>
-    <td>${(() => {const n = S.users.filter(u => u.site === s.id).length, why = n ? `Move its ${n} member${n > 1 ? 's' : ''} to another locality first` : S.org.sites.length < 2 ? 'The organisation needs at least one locality' : 'Delete this locality'; return `<button class="btn sm danger" data-act="site-del" data-id="${s.id}" title="${why}" ${n || S.org.sites.length < 2 ? 'disabled' : ''}>${V.siteDelArm === s.id ? 'Confirm delete' : 'Delete'}</button>`})()}</td></tr>`).join('')}</tbody></table></div>
-   <form id="sitef" class="row" style="margin-top:10px"><input type="text" id="site-n" placeholder="New locality, e.g. Doha branch" required style="flex:1;min-width:160px"><select id="site-ct" aria-label="Country">${Object.entries(COUNTRIES).map(([k, c]) => `<option value="${k}">${c.n}</option>`).join('')}</select><button class="btn sm">Add locality</button></form></section>
   <section class="panel"><h3 style="margin-bottom:10px">Add a member</h3>
    <form id="addf" class="stack" autocomplete="off"><div class="fg3">
     <div class="f"><label for="an">Full name</label><input type="text" id="an" required placeholder="e.g. Sara Khalid"></div>
@@ -4145,11 +4140,6 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
         case 'copycreds': copy(el.dataset.c, 'Sign-in details copied'); break;
         case 'rp-reset': V.rp = {preset: 'month', from: '', to: '', member: 'all', dept: 'all', task: 'all', status: 'all', review: 'all', tFrom: '', tTo: '', group: 'auto'}; render(); break;
         case 'lv-up': {const a = S.org.levels, i = a.findIndex(l => l.id === el.dataset.id);[a[i - 1], a[i]] = [a[i], a[i - 1]]; const n = fixLines(); log('reordered hierarchy levels'); render(); toast(n ? `Levels reordered. ${n} reporting line${n > 1 ? 's were' : ' was'} cleared because the manager is no longer above.` : 'Levels reordered'); break}
-        case 'site-del': {const s = siteOf(el.dataset.id); if (!ME().admin || !s) break;
-          const n = S.users.filter(u => u.site === s.id).length; if (n) {toast(`Move the ${n} member${n > 1 ? 's' : ''} of ${s.name} to another locality first.`); break}
-          if (S.org.sites.length < 2) {toast('The organisation needs at least one locality.'); break}
-          if (V.siteDelArm !== s.id) {V.siteDelArm = s.id; render(); break} V.siteDelArm = null;   // first click arms, second click deletes
-          S.org.sites = S.org.sites.filter(x => x.id !== s.id); log(`deleted the locality ${s.name}`); render(); toast(`${s.name} was deleted.`); break}
         case 'deluser': {const id = el.dataset.id, u = U(id); if (!ME().admin || id === ME_ID) break;
           if (V.delArm !== id) {V.delArm = id; render(); break} V.delArm = null;   // first click arms, second click deletes
           if (SYNC.host === 'server') {const r = await api('DELETE', '/api/doc/users/' + id).catch(e => ({error: e.message})); if (r.error) {render(); toast(r.error); break}
@@ -4209,7 +4199,6 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
       if (el.dataset.docexp) {const u = U(el.dataset.docexp), d = (u.docs || []).find(x => x.id === el.dataset.id); if (d && el.value) {(d.history = d.history || []).push({expiry: d.expiry, at: now(), by: ME_ID}); d.expiry = el.value; log(`updated ${u.id === ME_ID ? 'their' : u.name + '’s'} ${d.type} expiry`); render(); docsModal(u.id)} return }
       if (el.dataset.escfg) {const v = Math.max(0, Math.round(+el.value || 0)); S.org.esc = {...escCfg(), [el.dataset.escfg]: v}; log('updated the escalation matrix'); render(); toast('Escalation matrix updated'); return }
       if (el.dataset.org) {S.org[el.dataset.org] = el.value; log('updated organisation settings'); render(); return }
-      if (el.dataset.site) {const s = siteOf(el.dataset.site); if (el.dataset.k === 'name') s.name = el.value.trim() || s.name; else s.country = el.value; log('updated a locality'); render(); return }
       if (el.dataset.dp) {const d = deptOf(el.dataset.dp); if (el.dataset.k === 'name') d.name = el.value.trim() || d.name; else d.industry = el.value; log('updated a business unit'); render(); return }
       if (el.dataset.lv) {const l = Lv(el.dataset.lv); l[el.dataset.k] = el.value.trim() || l[el.dataset.k]; log('renamed a hierarchy level'); render(); return }
       if (el.dataset.u) {
@@ -4332,7 +4321,6 @@ ${r.length ? r.map((x, i) => `  ${i + 1}. ${x.t.title}: ${x.why.join(', ')}`).jo
         const pos = +$('#lv-pos').value; S.org.levels.splice(pos, 0, {id: 'L' + Date.now().toString(36), name, char: DEFAULT_CHARS[Math.min(pos, 5)]}); const n = fixLines(); log(`added the level “${name}”`); render(); toast(n ? `Level added. ${n} reporting line${n > 1 ? 's' : ''} cleared.` : 'Level added'); return
       }
       if (f.id === 'dpf') {const name = $('#dp-new').value.trim(); if (!name) return; S.org.depts.push({id: rid('D'), name, industry: $('#dp-ind').value}); log(`added the unit “${name}”`); render(); return }
-      if (f.id === 'sitef') {const name = $('#site-n').value.trim(); S.org.sites.push({id: rid('S'), name, country: $('#site-ct').value, changed: today()}); log(`added the locality “${name}”`); render(); toast(`${name} added`); return }
     });
 
     /* ======================= boot ======================= */
